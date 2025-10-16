@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/CMakeFiles/bootloader
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/CMakeFiles/bootloader.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/CMakeFiles/bootloader-complete.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+C:/00. Documents/ESP-IDF projects/TestingESP32Examples/hello_world/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
