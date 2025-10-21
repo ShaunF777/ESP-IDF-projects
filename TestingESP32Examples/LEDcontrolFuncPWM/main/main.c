@@ -13,10 +13,12 @@
 // LED GPIO assignments
 #define LED1_GPIO_PIN             5
 #define LED2_GPIO_PIN             4
+#define LED3_GPIO_PIN             23
 
 // LED PWM channels
 #define LED1_PWM_CHANNEL          LEDC_CHANNEL_0
 #define LED2_PWM_CHANNEL          LEDC_CHANNEL_1
+#define LED3_PWM_CHANNEL          LEDC_CHANNEL_2
 
 // Fade parameters
 #define FADE_STEP                 10
@@ -39,8 +41,7 @@ void fade_led(int gpio_pin, ledc_channel_t channel)
     - & is the address-of operator in C/C++. It gives the memory address of the variable.
     - So &led_channel means “pass the address of this struct so the function can read its fields.
     */
-
-
+   
     // Fade loop
     while (true) {
         // Fade in
@@ -72,22 +73,29 @@ void app_main(void)
     // Run each LED fade in its own FreeRTOS task
     xTaskCreate((TaskFunction_t)fade_led, "fade_led1", 2048, (void*)LED1_GPIO_PIN, 5, NULL);
     xTaskCreate((TaskFunction_t)fade_led, "fade_led2", 2048, (void*)LED2_GPIO_PIN, 5, NULL);
+    xTaskCreate((TaskFunction_t)fade_led, "fade_led3", 2048, (void*)LED3_GPIO_PIN, 5, NULL);
 }
 
 /*
 xTaskCreate(
     (TaskFunction_t)fade_led,   // The function that will run as the task. 
                                 // Here we cast fade_led to TaskFunction_t because FreeRTOS expects a specific signature.
+                                // Each task must be a function with the signature: void task_name(void *pvParameters).
                                 // This function will contain the infinite fade loop for one LED.
 
     "fade_led1",                // A human-readable name for the task (useful for debugging).
                                 // It does not affect execution, but helps identify tasks in logs or debuggers.
 
-    2048,                       // Stack size in words (not bytes). Each task needs its own stack.
-                                // 2048 words (~8 KB on ESP32) is enough for this LED fading logic.
+    2048,                       // The stack size for this task, in words (not bytes).
+                                // On ESP32, 1 word = 4 bytes, so 2048 words = 8192 bytes (8 KB).
+                                // This memory is reserved for the task’s local variables, function calls,
+                                and printf usage. If too small, the task may crash.
+
 
     (void*)LED1_GPIO_PIN,       // Parameter passed into the task function.
                                 // Here we pass the GPIO pin number (cast to void*) so fade_led knows which LED to control.
+                                // FreeRTOS always passes a void* pointer, so we cast the integer pin number (5) into void*.
+                                // Inside fade_led(), we cast it back to int to know which GPIO to use.
 
     5,                          // Task priority. Higher numbers mean higher priority.
                                 // Priority 5 is moderate; it ensures the LED fading runs smoothly without starving system tasks.
@@ -95,4 +103,9 @@ xTaskCreate(
     NULL                        // Optional handle to the created task.
                                 // If you don’t need to later reference or control the task (e.g., suspend/kill it), you can pass NULL.
 );
+*/
+
+/*✅ Takeaway mental model:
+- void* = “generic box” → you put something in (cast), then take it out (cast back).
+- 2048 = stack size in words → multiply by 4 to get bytes on ESP32.
 */
