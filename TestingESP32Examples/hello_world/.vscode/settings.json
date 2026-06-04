@@ -4,18 +4,19 @@
   "idf.toolsPathWin": "C:\\Users\\shaun\\.espressif",
   "idf.pythonInstallPath": "C:\\Users\\shaun\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
   "idf.flashType": "UART",
-  "idf.portWin": "COM5",
+  "idf.portWin": "COM3",
   "idf.customExtraVars": {
-    "IDF_TARGET": "esp32"
+    "IDF_TARGET": "esp32c3",
+    "OPENOCD_USB_ADAPTER_LOCATION": "1-2"
   },
   "clangd.path": "C:\\Users\\shaun\\.espressif\\tools\\esp-clang\\esp-19.1.2_20250312\\esp-clang\\bin\\clangd.exe",
   "clangd.arguments": [
     "--background-index",
-    "--query-driver=C:\\Users\\shaun\\.espressif\\tools\\xtensa-esp-elf\\esp-14.2.0_20241119\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-gcc.exe",
+    "--query-driver=**",
     "--compile-commands-dir=c:\\00. Documents\\ESP-IDF projects\\TestingESP32Examples\\hello_world\\build"
   ],
   "idf.openOcdConfigs": [
-    "interface/ftdi/esp32_devkitj_v1.cfg",
-    "target/esp32.cfg"
-  ]
+    "board/esp32c3-builtin.cfg"
+  ],
+  "idf.currentSetup": "C:\\Users\\shaun\\esp\\v5.5.1\\esp-idf"
 }

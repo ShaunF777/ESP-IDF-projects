@@ -1,0 +1,38 @@
+# -------------------------------
+# ESP-IDF + VS Code .gitignore
+# -------------------------------
+
+# Build output directories
+**/build/
+**/cmake-build-*/
+
+# VS Code workspace settings
+.vscode/
+*.code-workspace
+
+# ESP-IDF generated files
+sdkconfig.old
+sdkconfig.defaults
+sdkconfig.ci
+sdkconfig.release
+sdkconfig.debug
+
+# Compiled binaries and firmware
+*.bin
+*.elf
+*.map
+*.hex
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS-specific junk
+Thumbs.db
+.DS_Store
+

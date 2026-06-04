@@ -1,4 +1,4 @@
-$<TARGET_FILE:idf::xtensa>
+$<TARGET_FILE:idf::riscv>
 $<TARGET_FILE:__idf_cxx>
 $<TARGET_FILE:__idf_newlib>
 $<TARGET_FILE:__idf_freertos>
@@ -10,7 +10,7 @@ $<TARGET_FILE:__idf_hal>
 $<TARGET_FILE:__idf_esp_rom>
 $<TARGET_FILE:__idf_esp_common>
 $<TARGET_FILE:__idf_esp_system>
-$<TARGET_FILE:__idf_xtensa>
+$<TARGET_FILE:__idf_riscv>
 $<TARGET_FILE:__idf_spi_flash>
 $<TARGET_FILE:__idf_bootloader_support>
 $<TARGET_FILE:__idf_mbedtls>
@@ -28,6 +28,7 @@ $<TARGET_FILE:__idf_esp_partition>
 $<TARGET_FILE:__idf_app_update>
 $<TARGET_FILE:__idf_esp_app_format>
 $<TARGET_FILE:__idf_esp_bootloader_format>
+$<TARGET_FILE:idf::esp_mm>
 $<TARGET_FILE:__idf_esp_mm>
 $<TARGET_FILE:__idf_esp_security>
 $<TARGET_FILE:__idf_pthread>
@@ -41,7 +42,6 @@ $<TARGET_FILE:idf::app_update>
 $<TARGET_FILE:idf::esp_partition>
 $<TARGET_FILE:idf::efuse>
 $<TARGET_FILE:idf::bootloader_support>
-$<TARGET_FILE:idf::esp_mm>
 $<TARGET_FILE:idf::spi_flash>
 $<TARGET_FILE:idf::esp_system>
 $<TARGET_FILE:idf::esp_common>
