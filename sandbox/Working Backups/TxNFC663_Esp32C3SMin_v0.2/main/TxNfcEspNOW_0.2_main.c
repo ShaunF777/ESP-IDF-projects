@@ -25,7 +25,6 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
-#include "esp_sleep.h"
 #include "clrc663_idf.h"
 
 static const char *TAG = "main";
@@ -36,42 +35,19 @@ static const char *TAG = "main";
 #define SPI_MOSI    6
 #define SPI_CS      7
 
-// ── Deep sleep interval ───────────────────────────────────────────────────────
-#define SLEEP_DURATION_US   60000000ULL  // 60 seconds
+// ── Poll interval ─────────────────────────────────────────────────────────────
+#define POLL_INTERVAL_MS    2000
 
 // ── Tag layout ────────────────────────────────────────────────────────────────
 #define USER_STRINGS        3
 #define STRING_SIZE         8
 static const uint8_t string_first_block[USER_STRINGS] = { 0, 2, 4 };
 
-// ── Default configuration ─────────────────────────────────────────────────────
-#define DEFAULT_FLEET_ID    "KMG005"
-static const uint8_t default_mac_addr[ESP_NOW_ETH_ALEN] = {0x84, 0xF7, 0x03, 0x32, 0x24, 0xF4};
+// ── ESP-NOW ───────────────────────────────────────────────────────────────────
+#define FLEET_ID            "KMG005"
+static const uint8_t broadcast_addr[ESP_NOW_ETH_ALEN] = {0x84, 0xF7, 0x03, 0x32, 0x24, 0xF4};
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-static void load_configuration(char *fleet_id, uint8_t *mac_addr)
-{
-    nvs_handle_t h;
-    ESP_ERROR_CHECK(nvs_open("config", NVS_READWRITE, &h));
-
-    size_t len = 17;
-    if (nvs_get_str(h, "fleet_id", fleet_id, &len) != ESP_OK) {
-        strlcpy(fleet_id, DEFAULT_FLEET_ID, 17);
-        nvs_set_str(h, "fleet_id", fleet_id);
-        ESP_LOGI(TAG, "NVS: fleet_id defaulted to %s", fleet_id);
-    }
-
-    len = ESP_NOW_ETH_ALEN;
-    if (nvs_get_blob(h, "mac_addr", mac_addr, &len) != ESP_OK) {
-        memcpy(mac_addr, default_mac_addr, ESP_NOW_ETH_ALEN);
-        nvs_set_blob(h, "mac_addr", mac_addr, ESP_NOW_ETH_ALEN);
-        ESP_LOGI(TAG, "NVS: mac_addr defaulted");
-    }
-
-    nvs_commit(h);
-    nvs_close(h);
-}
 
 static void espnow_send_cb(const wifi_tx_info_t *tx_info, esp_now_send_status_t status)
 {
@@ -79,8 +55,9 @@ static void espnow_send_cb(const wifi_tx_info_t *tx_info, esp_now_send_status_t 
              status == ESP_NOW_SEND_SUCCESS ? "Ok" : "FAILED");
 }
 
-static void espnow_init(const uint8_t *mac_addr)
+static void espnow_init(void)
 {
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
@@ -98,20 +75,20 @@ static void espnow_init(const uint8_t *mac_addr)
         .ifidx   = WIFI_IF_STA,
         .encrypt = false,
     };
-    memcpy(peer.peer_addr, mac_addr, ESP_NOW_ETH_ALEN);
+    memcpy(peer.peer_addr, broadcast_addr, ESP_NOW_ETH_ALEN);
     ESP_ERROR_CHECK(esp_now_add_peer(&peer));
 
     ESP_LOGI(TAG, "Send Transmission ready");
 }
 
-static void send_payload(const char *fleet_id, const char *user_id, const uint8_t *mac_addr)
+static void send_payload(const char *user_id)
 {
     char payload[64];
     snprintf(payload, sizeof(payload),
              "{\"FleetID\":\"%s\",\"UserID\":\"%s\"}",
-             fleet_id, user_id);
+             FLEET_ID, user_id);
 
-    esp_err_t ret = esp_now_send(mac_addr,
+    esp_err_t ret = esp_now_send(broadcast_addr,
                                  (const uint8_t *)payload,
                                  strlen(payload));
     if (ret == ESP_OK) {
@@ -125,14 +102,8 @@ static void send_payload(const char *fleet_id, const char *user_id, const uint8_
 
 void app_main(void)
 {
-    // ── Load configuration from NVS ───────────────────────────────────────────
-    ESP_ERROR_CHECK(nvs_flash_init());
-    char     fleet_id[17];
-    uint8_t  mac_addr[ESP_NOW_ETH_ALEN];
-    load_configuration(fleet_id, mac_addr);
-
     // ── ESP-NOW init ──────────────────────────────────────────────────────────
-    espnow_init(mac_addr);
+    espnow_init();
 
     // ── SPI bus init ──────────────────────────────────────────────────────────
     spi_bus_config_t buscfg = {
@@ -149,20 +120,35 @@ void app_main(void)
     ESP_ERROR_CHECK(clrc663_init(SPI2_HOST, SPI_CS, &reader));
     clrc663_iso15693_init(&reader);
 
-    // ── Single poll attempt ───────────────────────────────────────────────────
-    uint8_t data[STRING_SIZE + 1] = {0};
-    if (clrc663_iso15693_read_block_pair(&reader, NULL, string_first_block[0], data)) {
-        ESP_LOGI(TAG, "String 0: \"%s\"", (char *)data);
-        send_payload(fleet_id, (const char *)data, mac_addr);
-        vTaskDelay(pdMS_TO_TICKS(20));  // allow send callback to fire
-    } else {
-        ESP_LOGW(TAG, "No tag found");
-    }
+    ESP_LOGI(TAG, "ISO15693 tag ready – polling every %d ms", POLL_INTERVAL_MS);
 
-    // ── Shutdown Wi-Fi and enter deep sleep ───────────────────────────────────
-    esp_now_deinit();
-    esp_wifi_stop();
-    esp_deep_sleep_enable_timer_wakeup(SLEEP_DURATION_US);
-    ESP_LOGI(TAG, "Entering deep sleep for %llu s", SLEEP_DURATION_US / 1000000ULL);
-    esp_deep_sleep_start();
+    while (1) {
+        bool any_read = false;
+
+        for (uint8_t s = 0; s < USER_STRINGS; s++) {
+            uint8_t data[STRING_SIZE + 1] = {0};
+
+            if (clrc663_iso15693_read_block_pair(&reader, NULL,
+                                                 string_first_block[s], data)) {
+                ESP_LOGI(TAG, "String %d: \"%s\"", s, (char *)data);
+
+                // Send ESP-NOW payload for String 0 (UserID)
+                if (s == 0) {
+                    send_payload((const char *)data);
+                }
+
+                any_read = true;
+            } else {
+                ESP_LOGW(TAG, "String %d: read failed", s);
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
+
+        if (!any_read) {
+            ESP_LOGW(TAG, "No tag found");
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(POLL_INTERVAL_MS));
+    }
 }

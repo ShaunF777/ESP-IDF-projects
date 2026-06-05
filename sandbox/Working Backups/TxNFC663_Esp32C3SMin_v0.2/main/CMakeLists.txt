@@ -1,0 +1,15 @@
+idf_component_register(
+    SRCS
+        "TxNfcEspNOW_0.2_main.c"
+        "../../../common_libs/CLRC663-Library/src/clrc663_idf.c"
+    INCLUDE_DIRS
+        "."
+        "../../../common_libs/CLRC663-Library/src"
+    REQUIRES
+        driver
+        freertos
+        esp_wifi
+        esp_event
+        esp_netif
+        nvs_flash
+)
