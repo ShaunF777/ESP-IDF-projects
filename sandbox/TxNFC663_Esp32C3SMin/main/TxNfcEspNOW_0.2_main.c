@@ -36,8 +36,8 @@ static const char *TAG = "main";
 #define SPI_MOSI    6
 #define SPI_CS      7
 
-// ── Deep sleep interval ───────────────────────────────────────────────────────
-#define SLEEP_DURATION_US   60000000ULL  // 60 seconds
+// ── LPCD wakeup pin ──────────────────────────────────────────────────────────
+#define LPCD_IRQ_PIN    3   // GPIO wired to CLRC663 IRQ pin
 
 // ── Tag layout ────────────────────────────────────────────────────────────────
 #define USER_STRINGS        3
@@ -159,10 +159,11 @@ void app_main(void)
         ESP_LOGW(TAG, "No tag found");
     }
 
-    // ── Shutdown Wi-Fi and enter deep sleep ───────────────────────────────────
+    // ── Shutdown Wi-Fi, arm LPCD and enter deep sleep ────────────────────────
     esp_now_deinit();
     esp_wifi_stop();
-    esp_deep_sleep_enable_timer_wakeup(SLEEP_DURATION_US);
-    ESP_LOGI(TAG, "Entering deep sleep for %llu s", SLEEP_DURATION_US / 1000000ULL);
+    setup_lpcd(&reader);
+    esp_sleep_enable_ext0_wakeup(LPCD_IRQ_PIN, 0);  // wake on IRQ low
+    ESP_LOGI(TAG, "Entering deep sleep - wake on tag detect");
     esp_deep_sleep_start();
 }

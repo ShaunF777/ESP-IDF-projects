@@ -331,6 +331,35 @@ bool clrc663_iso15693_write_block(clrc663_t *dev, const uint8_t *uid,
     return true;
 }
 
+// ── LPCD setup ────────────────────────────────────────────────────────────────
+
+void setup_lpcd(clrc663_t *dev)
+{
+    // IRQ0En: set bit7 (IRQ_Inv) – active-low IRQ pin
+    write_reg(dev, MFRC630_REG_IRQ0EN, MFRC630_IRQ0EN_IRQ_INV);
+
+    // IRQ1En: bit6 (IRQPinEn) + bit5 (LPCD_IRQEn), bit7=0 (open-drain)
+    write_reg(dev, MFRC630_REG_IRQ1EN,
+              MFRC630_IRQ1EN_IRQ_PINEN | MFRC630_IRQ1EN_LPCD_IRQEN);
+
+    // T4Control: AutoLPCD (bit7) + AutoWakeUp (bit6), LFO clock (bits1:0 = 0b10)
+    write_reg(dev, MFRC630_REG_T4CONTROL, 0xC2);
+
+    // T4Reload: ~1 second interval using 2 kHz LFO (0x07D0 = 2000 ticks)
+    write_reg(dev, MFRC630_REG_T4RELOADHI, 0x07);
+    write_reg(dev, MFRC630_REG_T4RELOADLO, 0xD0);
+
+    // LPCD sensitivity thresholds (default calibration values)
+    write_reg(dev, MFRC630_REG_LPCD_QMIN, QMIN_CALIB_VAL);   // 0x3F = 0xC0
+    write_reg(dev, MFRC630_REG_LPCD_QMAX, QMAX_CALIB_VAL);   // 0x40 = 0xFF
+    write_reg(dev, MFRC630_REG_LPCD_IMIN, IMIN_CALIB_VAL);   // 0x41 = 0xC0
+
+    // Trigger LPCD command
+    write_reg(dev, MFRC630_REG_COMMAND, MFRC630_CMD_LPCD);
+
+    ESP_LOGI(TAG, "LPCD armed – wake on tag detect");
+}
+
 bool clrc663_iso15693_write_block_pair(clrc663_t *dev, const uint8_t *uid,
                                        uint8_t first_block, const uint8_t *data)
 {

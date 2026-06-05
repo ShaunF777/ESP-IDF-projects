@@ -105,3 +105,13 @@ bool clrc663_iso15693_write_block(clrc663_t *dev, const uint8_t *uid,
  */
 bool clrc663_iso15693_write_block_pair(clrc663_t *dev, const uint8_t *uid,
                                        uint8_t first_block, const uint8_t *data);
+
+/**
+ * Configure LPCD (Low-Power Card Detection) and trigger the LPCD command.
+ * The chip will autonomously pulse the RF field every ~1 second and assert
+ * the IRQ pin when a card is detected, allowing the host to wake from sleep.
+ *
+ * Call this just before entering deep sleep. Re-run clrc663_iso15693_init()
+ * after waking before attempting any tag reads.
+ */
+void setup_lpcd(clrc663_t *dev);
